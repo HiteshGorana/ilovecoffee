@@ -2,6 +2,7 @@ import { Test } from '@nestjs/testing';
 import { CoffeesController } from './coffees.controller';
 import { CoffeesService } from './coffees.service';
 import { Coffee } from './entities/coffee.entity';
+import { ScheduleModule } from '@nestjs/schedule';
 
 describe('CoffeesController', () => {
   let coffeeController: CoffeesController;
@@ -9,6 +10,7 @@ describe('CoffeesController', () => {
 
   beforeEach(async () => {
     const moduleRef = await Test.createTestingModule({
+      imports: [ScheduleModule.forRoot()],
       controllers: [CoffeesController],
       providers: [CoffeesService],
     }).compile();
