@@ -54,4 +54,18 @@ describe('CoffeesController', () => {
       expect(await coffeeController.getCoffees()).toBe(result);
     });
   });
+  describe('createCoffee', () => {
+    it('create coffee', async () => {
+      const result: Coffee = {
+        id: 2,
+        name: 'Shipwreck Roast',
+        brand: 'Buddy Brew',
+        flavors: ['chocolate', 'vanilla'],
+      };
+      jest
+        .spyOn(coffeeService, 'createCoffee')
+        .mockImplementation(async () => result);
+      expect(await coffeeController.createCoffee(result)).toBe(result);
+    });
+  });
 });

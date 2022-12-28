@@ -1,9 +1,10 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Coffee } from './entities/coffee.entity';
+import { Cron, CronExpression } from '@nestjs/schedule';
 
 @Injectable()
 export class CoffeesService {
-  private readonly logger = new Logger(CoffeesService.name);
+  logger = new Logger(CoffeesService.name);
   private coffees: Coffee[] = [
     {
       id: 0,
@@ -19,6 +20,13 @@ export class CoffeesService {
     },
   ];
 
+  // cron jobs
+  @Cron(CronExpression.EVERY_10_SECONDS, { name: 'coffees' })
+  handleCoffeeCron() {
+    this.logger.debug('Called every 10 seconds');
+  }
+
+  // cron jobs ends
   async getCoffees() {
     return this.coffees;
   }
@@ -34,6 +42,7 @@ export class CoffeesService {
 
   async createCoffee(coffee: any) {
     this.coffees.push(coffee);
+    return coffee;
   }
 
   async updateCoffee(coffeeId: number, coffee: any) {
