@@ -1,9 +1,13 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { Coffee } from './entities/coffee.entity';
-import { Cron, CronExpression } from '@nestjs/schedule';
+import { CronExpression, SchedulerRegistry } from '@nestjs/schedule';
+import { CronJob } from 'cron';
 
 @Injectable()
 export class CoffeesService {
+  constructor(private schedulerRegistry: SchedulerRegistry) {
+  }
+
   logger = new Logger(CoffeesService.name);
   private coffees: Coffee[] = [
     {
@@ -20,13 +24,6 @@ export class CoffeesService {
     },
   ];
 
-  // cron jobs
-  @Cron(CronExpression.EVERY_10_SECONDS, { name: 'coffees' })
-  handleCoffeeCron() {
-    this.logger.debug('Called every 10 seconds');
-  }
-
-  // cron jobs ends
   async getCoffees() {
     return this.coffees;
   }
@@ -56,6 +53,53 @@ export class CoffeesService {
     const hasCoffee = coffeeIndex >= 0;
     if (hasCoffee) {
       this.coffees.splice(coffeeIndex, 1);
+    }
+  }
+
+  async getCoffeeJobs() {
+    const cronJobs = [];
+    for (const schedule of this.schedulerRegistry.getCronJobs()) {
+      const cronjob = {
+        cron: schedule[0],
+        time: schedule[1]['cronTime']['source'],
+      };
+      cronJobs.push(cronjob);
+    }
+    return cronJobs;
+  }
+
+  async setCronJob(type, cronName) {
+    const hasCronJob = this.schedulerRegistry.doesExist(type, cronName);
+    if (hasCronJob) {
+      const cronJob = this.schedulerRegistry.getCronJob(cronName);
+      if (!cronJob.running) {
+        cronJob.start();
+        return `${cronName} Started Running`;
+      } else {
+        return `${cronName} already Running`;
+      }
+    } else {
+      const job = new CronJob(CronExpression.EVERY_10_SECONDS, () => {
+        this.logger.warn(`time (10) for job ${cronName} to run!`);
+      });
+      this.schedulerRegistry.addCronJob(cronName, job);
+      job.start();
+      return `Started ${cronName} every 10 sec`;
+    }
+  }
+
+  async removeCronJob(type, cronName) {
+    const hasCronJob = this.schedulerRegistry.doesExist(type, cronName);
+    if (hasCronJob) {
+      const cronJob = this.schedulerRegistry.getCronJob(cronName);
+      if (!cronJob.running) {
+        return `${cronName} Not Running`;
+      } else {
+        cronJob.stop();
+        return `${cronName} Stopped`;
+      }
+    } else {
+      return `Not Found ${cronName}`;
     }
   }
 }
